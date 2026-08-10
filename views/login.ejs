@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>ログイン</title>
+</head>
+<body>
+    <h1>会議室予約システム ログイン</h1>
+    <% if (error) { %> <p style="color: red;"><%= error %></p> <% } %>
+    <form action="/login" method="POST">
+        <label>ユーザー名:</label>
+        <input type="text" name="username" required placeholder="[admin] で管理者画面へ">
+        <button type="submit">ログイン</button>
+    </form>
+</body>
+</html>
