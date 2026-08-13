@@ -1,0 +1,248 @@
+<%- include('partials/header', { title: '予約マイページ' }) %>
+
+<div class="space-y-8 max-w-7xl mx-auto">
+
+    <!-- 1. ユーザーウェルカムヘッダー -->
+    <div class="bg-indigo-600 rounded-2xl p-6 text-white shadow-lg flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+            <h1 class="text-2xl font-bold flex items-center gap-2">
+                <i class="ph ph-hand-waving text-amber-300"></i>
+                こんにちは、<%= user %> さん
+            </h1>
+            <p class="text-indigo-100 text-sm mt-1">会議室の予約・空き状況の確認ができます。</p>
+        </div>
+        <a href="/logout" class="bg-white/20 hover:bg-white/30 text-white font-semibold px-4 py-2 rounded-lg text-sm transition-colors flex items-center gap-1.5 backdrop-blur-sm">
+            <i class="ph ph-sign-out"></i>
+            ログアウト
+        </a>
+    </div>
+
+    <!-- 2. 予約状況（1週間タイムライン） -->
+    <div class="bg-white p-6 rounded-2xl shadow-lg border border-gray-100">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 pb-4 border-b border-gray-100">
+            <div class="flex items-center gap-3">
+                <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                    <i class="ph ph-calendar-blank text-indigo-600 text-2xl"></i>
+                    現在の予約状況
+                </h2>
+                <span class="text-xs font-semibold px-3 py-1 bg-indigo-50 text-indigo-700 rounded-full border border-indigo-100 hidden md:inline-block">
+                    週間スケジュール
+                </span>
+            </div>
+
+            <!-- ⭕ 1週間移動ナビゲーションボタン (/user 宛て) -->
+            <div class="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
+                <!-- １週間前へ -->
+                <a href="/user?startDate=<%= prevWeekStr %>" 
+                   class="px-3 py-1.5 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 text-xs font-bold rounded-lg transition-colors flex items-center gap-1 shadow-sm">
+                    <i class="ph ph-caret-left"></i>
+                    1週間前
+                </a>
+
+                <!-- 今日にする -->
+                <a href="/user" 
+                   class="px-3 py-1.5 bg-gray-100 text-gray-600 hover:bg-gray-200 text-xs font-semibold rounded-lg transition-colors shadow-sm flex items-center gap-1">
+                    <i class="ph ph-clock text-sm"></i>
+                    今日
+                </a>
+
+                <!-- １週間進める -->
+                <a href="/user?startDate=<%= nextWeekStr %>" 
+                   class="px-3 py-1.5 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 text-xs font-bold rounded-lg transition-colors flex items-center gap-1 shadow-sm">
+                    1週間進む
+                    <i class="ph ph-caret-right"></i>
+                </a>
+            </div>
+        </div>
+
+        <% if (rooms.length === 0) { %>
+            <div class="text-center py-12 text-gray-400">
+                <i class="ph ph-door-open text-4xl mb-2 block"></i>
+                <p>会議室が登録されていません。</p>
+            </div>
+        <% } else { %>
+            <!-- 横スクロール可能枠 -->
+            <div class="overflow-x-auto rounded-xl border border-gray-200 shadow-sm">
+                <table class="w-full border-collapse text-left">
+                    <thead>
+                        <tr class="bg-gray-50 text-gray-700 text-sm font-semibold border-b border-gray-200">
+                            <th class="p-4 w-44 min-w-[160px] bg-gray-100/80 text-gray-900 border-r border-gray-200">
+                                <div class="flex items-center gap-1.5">
+                                    <i class="ph ph-door text-indigo-600 text-lg"></i>
+                                    会議室
+                                </div>
+                            </th>
+                            <% timelineDates.forEach(t => { %>
+                                <th class="p-3 text-center min-w-[130px] border-r border-gray-200 last:border-r-0">
+                                    <span class="block text-xs font-bold text-gray-700"><%= t.label %></span>
+                                </th>
+                            <% }) %>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200 text-sm">
+                        <% rooms.forEach(room => { %>
+                            <tr class="hover:bg-gray-50/50 transition-colors">
+                                <td class="p-4 font-bold text-gray-800 bg-gray-50/80 border-r border-gray-200 align-top">
+                                    <div class="flex items-center gap-2">
+                                        <span class="w-2.5 h-2.5 rounded-full bg-indigo-500"></span>
+                                        <%= room.name %>
+                                    </div>
+                                </td>
+                                
+                                <% timelineDates.forEach(t => { %>
+                                    <td class="p-2 border-r border-gray-200 last:border-r-0 align-top h-28 min-w-[130px] bg-white">
+                                        <% 
+                                            const dayBookings = bookings.filter(b => b.roomName === room.name && b.date === t.dateStr);
+                                            dayBookings.sort((a, b) => a.startTime.localeCompare(b.startTime));
+                                        %>
+                                        <% if (dayBookings.length > 0) { %>
+                                            <div class="space-y-1.5">
+                                                <% dayBookings.forEach(b => { %>
+                                                    <div class="bg-indigo-50/80 hover:bg-indigo-100/80 border border-indigo-200/80 rounded-lg p-2 transition-all text-xs text-indigo-950 shadow-sm">
+                                                        <div class="font-bold text-indigo-700 flex items-center gap-1 mb-1">
+                                                            <i class="ph ph-clock text-indigo-500"></i>
+                                                            <%= b.startTime %> - <%= b.endTime %>
+                                                        </div>
+                                                        <div class="flex items-center gap-1 text-gray-600 truncate">
+                                                            <i class="ph ph-user text-gray-400"></i>
+                                                            <span class="truncate"><%= b.user %></span>
+                                                        </div>
+                                                    </div>
+                                                <% }) %>
+                                            </div>
+                                        <% } else { %>
+                                            <div class="h-full flex items-center justify-center text-gray-300 font-light text-xs">
+                                                -
+                                            </div>
+                                        <% } %>
+                                    </td>
+                                <% }) %>
+                            </tr>
+                        <% }) %>
+                    </tbody>
+                </table>
+            </div>
+        <% } %>
+    </div>
+
+    <!-- 下段グリッド（あなたの予約一覧 ＆ 新規予約フォーム） -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        
+        <!-- 3. あなたの予約一覧 -->
+        <div class="bg-white p-6 rounded-2xl shadow-lg border border-gray-100 flex flex-col justify-between">
+            <div>
+                <h2 class="text-xl font-bold text-gray-800 mb-6 pb-4 border-b border-gray-100 flex items-center gap-2">
+                    <i class="ph ph-bookmark-simple text-indigo-600 text-2xl"></i>
+                    あなたの予約一覧
+                </h2>
+
+                <% if (myBookings.length === 0) { %>
+                    <div class="text-center py-10 text-gray-400">
+                        <i class="ph ph-calendar-x text-4xl mb-2 block"></i>
+                        <p class="text-sm">現在取得している予約はありません。</p>
+                    </div>
+                <% } else { %>
+                    <div class="space-y-3">
+                        <% myBookings.forEach(b => { %>
+                            <div class="p-4 rounded-xl border border-gray-200 bg-gray-50/50 flex items-center justify-between gap-4 hover:border-indigo-200 transition-colors">
+                                <div class="space-y-1">
+                                    <div class="flex items-center gap-2">
+                                        <span class="px-2.5 py-0.5 text-xs font-bold bg-indigo-100 text-indigo-700 rounded-md">
+                                            <%= b.roomName %>
+                                        </span>
+                                        <span class="text-xs font-bold text-gray-500">
+                                            <%= b.date %>
+                                        </span>
+                                    </div>
+                                    <div class="text-sm font-bold text-gray-800 flex items-center gap-1">
+                                        <i class="ph ph-clock text-indigo-500"></i>
+                                        <%= b.startTime %> ～ <%= b.endTime %>
+                                    </div>
+                                </div>
+
+                                <form action="/user/book/delete/<%= b.id %>" method="POST" onsubmit="return confirm('この予約をキャンセルしますか？')">
+                                    <button type="submit" class="px-3 py-1.5 text-xs font-bold text-red-600 hover:text-white border border-red-200 hover:bg-red-600 rounded-lg transition-all flex items-center gap-1 shadow-sm">
+                                        <i class="ph ph-trash text-sm"></i>
+                                        キャンセル
+                                    </button>
+                                </form>
+                            </div>
+                        <% }) %>
+                    </div>
+                <% } %>
+            </div>
+        </div>
+
+        <!-- 4. 新しく会議室を予約するフォーム -->
+        <div class="bg-white p-6 rounded-2xl shadow-lg border border-gray-100">
+            <h2 class="text-xl font-bold text-gray-800 mb-6 pb-4 border-b border-gray-100 flex items-center gap-2">
+                <i class="ph ph-plus-circle text-indigo-600 text-2xl"></i>
+                新しく会議室を予約する
+            </h2>
+
+            <!-- エラーメッセージ -->
+            <% if (typeof error !== 'undefined' && error) { %> 
+                <div class="bg-red-50 border-l-4 border-red-500 p-3 mb-6 rounded-md">
+                    <p class="text-xs text-red-700 font-bold flex items-center gap-2">
+                        <i class="ph ph-warning-circle text-base"></i>
+                        <%= error %>
+                    </p>
+                </div>
+            <% } %>
+
+            <% if (rooms.length === 0) { %>
+                <p class="text-gray-400 text-sm text-center py-8">利用可能な会議室がありません。</p>
+            <% } else { %>
+                <form action="/user/book" method="POST" class="space-y-4">
+                    <!-- 会議室選択 -->
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1.5">会議室</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="ph ph-door text-gray-400 text-base"></i>
+                            </div>
+                            <select name="roomName" required class="w-full pl-9 pr-3 py-2 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors bg-gray-50 focus:bg-white text-gray-800">
+                                <% rooms.forEach(room => { %>
+                                    <option value="<%= room.name %>"><%= room.name %></option>
+                                <% }) %>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- 日付 -->
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1.5">利用日</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="ph ph-calendar text-gray-400 text-base"></i>
+                            </div>
+                            <input type="date" name="date" required class="w-full pl-9 pr-3 py-2 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors bg-gray-50 focus:bg-white text-gray-800">
+                        </div>
+                    </div>
+
+                    <!-- 時間帯 (開始 & 終了) -->
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1.5">開始時間</label>
+                            <input type="time" name="startTime" required class="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors bg-gray-50 focus:bg-white text-gray-800">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1.5">終了時間</label>
+                            <input type="time" name="endTime" required class="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors bg-gray-50 focus:bg-white text-gray-800">
+                        </div>
+                    </div>
+
+                    <!-- 送信ボタン -->
+                    <button type="submit" class="w-full mt-2 bg-indigo-600 text-white font-bold py-2.5 px-4 text-xs rounded-lg hover:bg-indigo-700 hover:shadow-md transition-all flex justify-center items-center gap-1.5">
+                        <i class="ph ph-check-circle text-base"></i>
+                        予約を確定する
+                    </button>
+                </form>
+            <% } %>
+        </div>
+
+    </div>
+
+</div>
+
+<%- include('partials/footer') %>

@@ -1,0 +1,13 @@
+@charset "UTF-8";
+
+body {
+    font-family: 'Noto Sans JP', sans-serif;
+    background-color: #f8fafc; /* 優しいオフホワイトの背景 */
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh; /* フッターを常に最下部に固定するため */
+}
+
+main {
+    flex-grow: 1;
+}

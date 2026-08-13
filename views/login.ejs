@@ -1,0 +1,172 @@
+<%- include('partials/header', { title: 'ログイン' }) %>
+
+<div class="space-y-10 max-w-7xl mx-auto">
+    <!-- 1. ログインフォーム（※ 印刷時は print:hidden で非表示） -->
+    <div class="max-w-xs mx-auto bg-white p-5 rounded-2xl shadow-lg border border-gray-100 print:hidden">
+        <h2 class="text-lg font-bold text-gray-800 mb-4 text-center flex items-center justify-center gap-1.5">
+            <i class="ph ph-sign-in text-indigo-600 text-xl"></i>
+            会議室予約システム
+        </h2>
+        
+        <!-- エラーメッセージ -->
+        <% if (typeof error !== 'undefined' && error) { %> 
+            <div class="bg-red-50 border-l-4 border-red-500 p-2.5 mb-4 rounded-md">
+                <p class="text-xs text-red-700 font-bold flex items-center gap-1.5">
+                    <i class="ph ph-warning-circle text-base"></i>
+                    <%= error %>
+                </p>
+            </div>
+        <% } %>
+
+        <form action="/login" method="POST" class="space-y-4">
+            <div>
+                <label class="block text-xs font-semibold text-gray-700 mb-1.5">ユーザー名</label>
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="ph ph-user text-gray-400 text-base"></i>
+                    </div>
+
+                    <input type="text" name="username" list="meetings" required 
+                           placeholder="選択または直接入力" 
+                           autocomplete="off"
+                           class="w-full pl-9 pr-3 py-2 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors bg-gray-50 focus:bg-white text-gray-800">
+                    
+                    <datalist id="meetings">
+                        <% if (typeof presetMeetings !== 'undefined') { %>
+                            <% presetMeetings.forEach(u => { %>
+                                <option value="<%= u %>"></option>
+                            <% }) %>
+                        <% } %>
+                    </datalist>
+                </div>
+            </div>
+            
+            <button type="submit" 
+                    class="w-full bg-indigo-600 text-white font-bold py-2 px-3 text-xs rounded-lg hover:bg-indigo-700 hover:shadow-md transition-all flex justify-center items-center gap-1.5">
+                ログイン
+                <i class="ph ph-arrow-right"></i>
+            </button>
+        </form>
+    </div>
+
+    <!-- 2. 予約状況（1週間タイムライン） -->
+    <div class="bg-white p-6 rounded-2xl shadow-lg border border-gray-100 print:shadow-none print:border-none print:p-0">
+        <div class="flex items-center justify-between mb-6 pb-4 border-b border-gray-100 print:mb-3 print:pb-2">
+            <div class="flex items-center gap-2">
+                <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2 print:text-base">
+                    <i class="ph ph-calendar-blank text-indigo-600 text-2xl print:hidden"></i>
+                    現在の予約状況
+                </h2>
+                <span class="text-xs font-semibold px-3 py-1 bg-indigo-50 text-indigo-700 rounded-full border border-indigo-100 print:hidden">
+                    週間スケジュール
+                </span>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <!-- ⭕ 印刷ボタン（※ 印刷画面自体では非表示） -->
+                <button onclick="window.print()" 
+                        class="px-3 py-1.5 bg-slate-700 hover:bg-slate-800 text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5 shadow-sm print:hidden">
+                    <i class="ph ph-printer text-base"></i>
+                    印刷する
+                </button>
+
+                <!-- 1週間移動ナビゲーション（※ 印刷時は非表示） -->
+                <div class="flex items-center gap-2 print:hidden">
+                    <a href="/?startDate=<%= typeof prevWeekStr !== 'undefined' ? prevWeekStr : '' %>" 
+                       class="px-3 py-1.5 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 text-xs font-bold rounded-lg transition-colors flex items-center gap-1 shadow-sm">
+                        <i class="ph ph-caret-left"></i>
+                        1週間前
+                    </a>
+
+                    <a href="/" 
+                       class="px-3 py-1.5 bg-gray-100 text-gray-600 hover:bg-gray-200 text-xs rounded-lg transition-colors shadow-sm flex items-center gap-1">
+                        <i class="ph ph-clock text-sm"></i>
+                        今日
+                    </a>
+
+                    <a href="/?startDate=<%= typeof nextWeekStr !== 'undefined' ? nextWeekStr : '' %>" 
+                       class="px-3 py-1.5 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 text-xs font-bold rounded-lg transition-colors flex items-center gap-1 shadow-sm">
+                        1週間進む
+                        <i class="ph ph-caret-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <% if (rooms.length === 0) { %>
+            <div class="text-center py-12 text-gray-400">
+                <i class="ph ph-door-open text-4xl mb-2 block"></i>
+                <p>会議室が登録されていません。</p>
+            </div>
+        <% } else { %>
+            <!-- 横スクロール可能枠（※ 印刷時ははみ出しを解除） -->
+            <div class="overflow-x-auto print:overflow-visible rounded-xl border border-gray-200 shadow-sm print:border-gray-400 print:shadow-none">
+                <table class="w-full border-collapse text-left print:text-xs">
+                    <thead>
+                        <tr class="bg-gray-50 text-gray-700 text-sm font-semibold border-b border-gray-200 print:bg-gray-100">
+                            <!-- 左端：会議室カラム -->
+                            <th class="p-4 w-44 min-w-[160px] bg-gray-100/80 text-gray-900 border-r border-gray-200 print:p-2 print:w-28 print:min-w-0">
+                                <div class="flex items-center gap-1.5">
+                                    <i class="ph ph-door text-indigo-600 text-lg print:hidden"></i>
+                                    会議室
+                                </div>
+                            </th>
+                            <!-- 日付ヘッダー -->
+                            <% timelineDates.forEach(t => { %>
+                                <th class="p-3 text-center min-w-[130px] border-r border-gray-200 last:border-r-0 print:p-1.5 print:min-w-0">
+                                    <span class="block text-xs font-bold text-gray-700 print:text-[10px]"><%= t.label %></span>
+                                </th>
+                            <% }) %>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200 text-sm">
+                        <% rooms.forEach(room => { %>
+                            <tr class="hover:bg-gray-50/50 transition-colors">
+                                <!-- 会議室名 -->
+                                <td class="p-4 font-bold text-gray-800 bg-gray-50/80 border-r border-gray-200 align-top print:p-2 print:text-xs">
+                                    <div class="flex items-center gap-2">
+                                        <span class="w-2.5 h-2.5 rounded-full bg-indigo-500 print:hidden"></span>
+                                        <%= room.name %>
+                                    </div>
+                                </td>
+                                
+                                <!-- 日付ごとのコマ -->
+                                <% timelineDates.forEach(t => { %>
+                                    <td class="p-2 border-r border-gray-200 last:border-r-0 align-top h-28 min-w-[130px] bg-white print:p-1 print:h-auto print:min-w-0">
+                                        <% 
+                                            const dayBookings = bookings.filter(b => b.roomName === room.name && b.date === t.dateStr);
+                                            dayBookings.sort((a, b) => a.startTime.localeCompare(b.startTime));
+                                        %>
+                                        <% if (dayBookings.length > 0) { %>
+                                            <div class="space-y-1.5 print:space-y-1">
+                                                <% dayBookings.forEach(b => { %>
+                                                    <!-- 予約枠カード -->
+                                                    <div class="bg-indigo-50/80 border border-indigo-200/80 rounded-lg p-2 text-xs text-indigo-950 shadow-sm print:p-1 print:rounded print:border-gray-300 print:bg-gray-50">
+                                                        <div class="font-bold text-indigo-700 print:text-black print:text-[10px] flex items-center gap-1 mb-1 print:mb-0">
+                                                            <i class="ph ph-clock text-indigo-500 print:hidden"></i>
+                                                            <%= b.startTime %>-<%= b.endTime %>
+                                                        </div>
+                                                        <div class="flex items-center gap-1 text-gray-600 truncate print:text-black print:text-[10px]">
+                                                            <i class="ph ph-user text-gray-400 print:hidden"></i>
+                                                            <span class="truncate"><%= b.user %></span>
+                                                        </div>
+                                                    </div>
+                                                <% }) %>
+                                            </div>
+                                        <% } else { %>
+                                            <div class="h-full flex items-center justify-center text-gray-300 font-light text-xs print:text-[10px]">
+                                                -
+                                            </div>
+                                        <% } %>
+                                    </td>
+                                <% }) %>
+                            </tr>
+                        <% }) %>
+                    </tbody>
+                </table>
+            </div>
+        <% } %>
+    </div>
+</div>
+
+<%- include('partials/footer') %>
