@@ -1,7 +1,7 @@
-Javascript node.js express.js postgreSQLで動く会議室予約
+Javascript node.js express.js postgreSQLで動く簡単会議室予約
 
 固定された会議名はmeeting.jsonに設定
-DB接続情報は .env (.env_sampleをRenameしてください）に記載。
+DB接続情報は .env (.env_sampleをRenameして.envにしてください）に記載。
 
 adminで管理者権限があたえられ会議室の追加など行えます。
 
