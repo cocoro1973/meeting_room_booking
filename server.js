@@ -25,19 +25,17 @@ app.use(session({
     saveUninitialized: true
 }));
 
-// データ保持用の共有メモリ
-//let rooms = [{ id: 1, name: '会議室A' }, { id: 2, name: '会議室B' }];
-//let bookings = [];
 
 // --- 共通ヘルパー関数 ---
-function formatDate(date) {
+
+const formatDate = (date) => {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
-}
+};
 
-function getTimelineData(baseDateStr) {
+const getTimelineData = (baseDateStr) => {
     const daysOfWeek = ['日', '月', '火', '水', '木', '金', '土'];
     let baseDate = new Date(baseDateStr);
     if (isNaN(baseDate.getTime())) baseDate = new Date();
@@ -56,18 +54,19 @@ function getTimelineData(baseDateStr) {
     const nextWeekDate = new Date(baseDate); nextWeekDate.setDate(baseDate.getDate() + 7);
 
     return { dates, prevWeekStr: formatDate(prevWeekDate), nextWeekStr: formatDate(nextWeekDate) };
-}
+};
+
 
 // 認証ミドルウェア
-function checkAuth(role) {
-    return (req, res, next) => {
-        if (!req.session.user) return res.redirect('/');
-        if (role === 'admin' && req.session.user !== 'admin') {
-            return res.status(403).send('閲覧権限がありません（管理者専用）');
-        }
-        next();
-    };
-}
+const checkAuth = (role) => (req, res, next) => {
+    if (!req.session.user) return res.redirect('/');
+    if (role === 'admin' && req.session.user !== 'admin') {
+        return res.status(403).send('閲覧権限がありません（管理者専用）');
+    }
+    next();
+};
+
+
 
 // 他のファイルに渡すコンテキストオブジェクト
 const appContext = { dbPool, getTimelineData, checkAuth, formatDate };
